@@ -9,7 +9,7 @@ import (
 )
 
 // User register
-func RegisterUser(c *gin.Context, db *gorm.DB) {
+func UserRegister(c *gin.Context, db *gorm.DB) {
 	var input struct {
 		Username string `json:"user" binding:"required"`
 		Password string `json:"password" binding:"required"`
@@ -31,6 +31,26 @@ func RegisterUser(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"message": "User created!"})
+}
+
+// User Login
+func UserLogin(c *gin.Context, db *gorm.DB) {
+	var input struct {
+		Username string `json:"user" binding:"required"`
+		Password string `json:"password" binding:"required"`
+	}
+	// Check input
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	// Find user in database
+	var user user.User
+	if err := db.Where("username = ? AND password = ?", input.Username, input.Password).First(&user).Error; err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Login success!"})
 }
 
 // Show all products
