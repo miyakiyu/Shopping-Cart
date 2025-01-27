@@ -30,7 +30,10 @@ func main() {
 
 	r.GET("/ping", controller.GetAllProducts)
 	r.POST("/register", func(c *gin.Context) {
-		controller.RegisterUser(c, database)
+		controller.UserRegister(c, database)
+	})
+	r.POST("/login", func(c *gin.Context) {
+		controller.UserLogin(c, database)
 	})
 
 	r.Run()
