@@ -25,15 +25,25 @@ func main() {
 		log.Println("資料庫連線成功")
 	}
 
-	// route
+	//settings
 	r := gin.Default()
+	r.LoadHTMLGlob("html/*.html")
 
+	// route
 	r.GET("/ping", controller.GetAllProducts)
 	r.POST("/register", func(c *gin.Context) {
 		controller.UserRegister(c, database)
 	})
 	r.POST("/login", func(c *gin.Context) {
 		controller.UserLogin(c, database)
+	})
+
+	// Test
+	r.GET("/register", func(c *gin.Context) {
+		c.HTML(200, "register.html", nil)
+	})
+	r.GET("/login", func(c *gin.Context) {
+		c.HTML(200, "login.html", nil)
 	})
 
 	r.Run()
