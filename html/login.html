@@ -29,7 +29,12 @@
 
             const result = await response.json();
             document.getElementById("response").innerText = result.message || result.error;
-        }
+
+            if (response.ok) {
+                // 登入成功後跳轉到首頁
+                window.location.href = '/';
+            }
+}
     </script>
 </body>
 </html>
