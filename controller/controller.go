@@ -106,5 +106,14 @@ func UserInfo(c *gin.Context) {
 
 // Show all products from database
 func GetAllProducts(c *gin.Context, db *gorm.DB) {
+	var list []products.Product
+	if err := db.Find(&list).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
+func AddToCart() {
 
 }
