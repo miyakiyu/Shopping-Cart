@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>商品列表</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 20px;
+            padding: 20px;
+        }
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+            width: 250px;
+            text-align: center;
+        }
+        .card button {
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            padding: 10px;
+            cursor: pointer;
+            width: 100%;
+        }
+        .card button:hover {
+            background-color: #0056b3;
+        }
+        .quantity {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .quantity button {
+            width: 30px;
+            height: 30px;
+            font-size: 16px;
+        }
+        .quantity input {
+            width: 50px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <h2>商品列表</h2>
+    <div class="container" id="product-list"></div>
+
+    <script>
+        async function fetchProducts() {
+            const response = await fetch("/products");
+            const products = await response.json();
+            const container = document.getElementById("product-list");
+            
+            products.forEach(product => {
+                const card = document.createElement("div");
+                card.classList.add("card");
+                card.innerHTML = `
+                    <h3>${product.name}</h3>
+                    <p>價格: $${product.price}</p>
+                    <p>庫存: ${product.stock}</p>
+                    <div class="quantity">
+                        <button onclick="changeQuantity('${product.id}', -1)">-</button>
+                        <input type="number" id="qty-${product.id}" value="1" min="1" max="${product.stock}">
+                        <button onclick="changeQuantity('${product.id}', 1)">+</button>
+                    </div>
+                    <button onclick="addToCart('${product.id}')">加入購物車</button>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        function changeQuantity(productId, delta) {
+            const input = document.getElementById(`qty-${productId}`);
+            let newValue = parseInt(input.value) + delta;
+            if (newValue < 1) newValue = 1;
+            input.value = newValue;
+        }
+
+        async function addToCart(productId) {
+            const quantity = document.getElementById(`qty-${productId}`).value;
+            const response = await fetch("/add-to-cart", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ product_id: productId, quantity: quantity })
+            });
+            const result = await response.json();
+            alert(result.message);
+        }
+
+        fetchProducts();
+    </script>
+</body>
+</html>
