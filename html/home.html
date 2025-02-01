@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>購物網站首頁</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background-color: #f4f4f4;
+        }
+        .container {
+            text-align: center;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+        .btn {
+            display: block;
+            width: 200px;
+            margin: 10px auto;
+            padding: 10px;
+            background-color: #007BFF;
+            color: white;
+            border: none;
+            cursor: pointer;
+            border-radius: 5px;
+            text-align: center;
+            text-decoration: none;
+        }
+        .btn:hover {
+            background-color: #0056b3;
+        }
+        .logout-btn {
+            background-color: #dc3545;
+        }
+        .logout-btn:hover {
+            background-color: #a71d2a;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container" id="welcome-container">
+        <h1>歡迎來到購物網站</h1>
+        <p id="welcome-text">請登入或註冊以繼續</p>
+
+        <div id="guest-buttons">
+            <a href="/register" class="btn">註冊</a>
+            <a href="/login" class="btn">登入</a>
+        </div>
+
+        <div id="user-buttons" style="display: none;">
+            <p id="user-role"></p>
+            <a href="/add-product" class="btn" id="seller-btn" style="display: none;">新增商品</a>
+            <a href="/shop" class="btn" id="buyer-btn" style="display: none;">前往購物網站</a>
+            <button class="btn logout-btn" onclick="logout()">登出</button>
+        </div>
+    </div>
+
+    <script>
+        async function checkLogin() {
+            const response = await fetch("/user-info");
+            const data = await response.json();
+
+            if (data.logged_in) {
+                document.getElementById("guest-buttons").style.display = "none";
+                document.getElementById("user-buttons").style.display = "block";
+                document.getElementById("welcome-text").innerText = `歡迎，${data.username}！`;
+
+                if (data.role === "seller") {
+                    document.getElementById("seller-btn").style.display = "block";
+                } else if (data.role === "buyer") {
+                    document.getElementById("buyer-btn").style.display = "block";
+                }
+            }
+        }
+
+        async function logout() {
+            await fetch("/logout", { method: "POST" });
+            window.location.href = "/login"; // 登出後轉跳到登入頁面
+        }
+
+        checkLogin();
+    </script>
+
+</body>
+</html>
