@@ -2,8 +2,10 @@ package main
 
 import (
 	"log"
+	"net/http"
 	"shop/controller"
 	db "shop/database"
+	"shop/middleware"
 
 	"github.com/gin-gonic/gin"
 )
@@ -28,22 +30,40 @@ func main() {
 	//settings
 	r := gin.Default()
 	r.LoadHTMLGlob("html/*.html")
+	r.Use(middleware.AuthMiddleware())
 
 	// route
-	r.GET("/ping", controller.GetAllProducts)
 	r.POST("/register", func(c *gin.Context) {
 		controller.UserRegister(c, database)
 	})
 	r.POST("/login", func(c *gin.Context) {
 		controller.UserLogin(c, database)
 	})
+	r.POST("/add-product", func(c *gin.Context) {
+		controller.AddProduct(c, database)
+	})
+	r.GET("/user-info", func(c *gin.Context) {
+		controller.UserInfo(c)
+	})
 
-	// Test
+	// HTML
+	r.GET("/", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "home.html", nil)
+	})
 	r.GET("/register", func(c *gin.Context) {
-		c.HTML(200, "register.html", nil)
+		c.HTML(http.StatusOK, "register.html", nil)
 	})
 	r.GET("/login", func(c *gin.Context) {
-		c.HTML(200, "login.html", nil)
+		c.HTML(http.StatusOK, "login.html", nil)
+	})
+	r.GET("/add-product", func(c *gin.Context) {
+		// Check user role
+		role, exists := c.Get("role")
+		if !exists || role != "seller" {
+			c.Redirect(http.StatusFound, "/")
+			return
+		}
+		c.HTML(http.StatusOK, "add_product.html", nil)
 	})
 
 	r.Run()
