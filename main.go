@@ -45,6 +45,9 @@ func main() {
 	r.GET("/user-info", func(c *gin.Context) {
 		controller.UserInfo(c)
 	})
+	r.GET("/products", func(c *gin.Context) {
+		controller.GetAllProducts(c, database)
+	})
 
 	// HTML
 	r.GET("/", func(c *gin.Context) {
@@ -64,6 +67,9 @@ func main() {
 			return
 		}
 		c.HTML(http.StatusOK, "add_product.html", nil)
+	})
+	r.GET("/shop", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "shop.html", nil)
 	})
 
 	r.Run()
