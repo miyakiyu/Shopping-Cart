@@ -51,13 +51,78 @@
             width: 50px;
             text-align: center;
         }
+        /* 購物車按鈕 */
+        .cart-icon {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background-color: #ff9800;
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 18px;
+        }
+        /* 購物車視窗 */
+        .cart-popup {
+            position: fixed;
+            bottom: 80px;
+            right: 20px;
+            width: 300px;
+            background: white;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            display: none;
+        }
+        .cart-popup h3 {
+            margin-top: 0;
+        }
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 5px 0;
+        }
+        .cart-item button {
+            width: 25px;
+            height: 25px;
+            font-size: 14px;
+            margin: 0 5px;
+        }
+        .checkout-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+        .checkout-btn:hover {
+            background-color: #218838;
+        }
     </style>
 </head>
 <body>
     <h2>商品列表</h2>
     <div class="container" id="product-list"></div>
 
+    <!-- 購物車按鈕 -->
+    <button class="cart-icon" onclick="toggleCart()">🛒</button>
+
+    <!-- 購物車視窗 -->
+    <div class="cart-popup" id="cart-popup">
+        <h3>購物車</h3>
+        <div id="cart-items"></div>
+        <p><strong>總金額: $<span id="total-price">0</span></strong></p>
+        <button class="checkout-btn" onclick="checkout()">結帳</button>
+    </div>
+
     <script>
+        let cart = {};
+
         async function fetchProducts() {
             const response = await fetch("/products");
             const products = await response.json();
@@ -75,7 +140,7 @@
                         <input type="number" id="qty-${product.id}" value="1" min="1" max="${product.stock}">
                         <button onclick="changeQuantity('${product.id}', 1)">+</button>
                     </div>
-                    <button onclick="addToCart('${product.id}')">加入購物車</button>
+                    <button onclick="addToCart('${product.id}', '${product.name}', ${product.price})">加入購物車</button>
                 `;
                 container.appendChild(card);
             });
@@ -88,15 +153,83 @@
             input.value = newValue;
         }
 
-        async function addToCart(productId) {
-            const quantity = document.getElementById(`qty-${productId}`).value;
-            const response = await fetch("/add-to-cart", {
+        function addToCart(productId, name, price) {
+            const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
+            
+            if (cart[productId]) {
+                cart[productId].quantity += quantity;
+            } else {
+                cart[productId] = { name, price, quantity };
+            }
+
+            updateCart();
+            alert(`${name} 已加入購物車`);
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById("cart-items");
+            const totalPrice = document.getElementById("total-price");
+            cartItems.innerHTML = "";
+            let total = 0;
+
+            Object.keys(cart).forEach(productId => {
+                const item = cart[productId];
+                total += item.price * item.quantity;
+
+                const div = document.createElement("div");
+                div.classList.add("cart-item");
+                div.innerHTML = `
+                    <span>${item.name} ($${item.price})</span>
+                    <div>
+                        <button onclick="updateCartItem('${productId}', -1)">-</button>
+                        <span>${item.quantity}</span>
+                        <button onclick="updateCartItem('${productId}', 1)">+</button>
+                    </div>
+                `;
+                cartItems.appendChild(div);
+            });
+
+            totalPrice.textContent = total;
+        }
+
+        function updateCartItem(productId, delta) {
+            if (cart[productId]) {
+                cart[productId].quantity += delta;
+                if (cart[productId].quantity <= 0) {
+                    delete cart[productId];
+                }
+                updateCart();
+            }
+        }
+
+        function toggleCart() {
+            const cartPopup = document.getElementById("cart-popup");
+            cartPopup.style.display = cartPopup.style.display === "none" ? "block" : "none";
+        }
+
+        function checkout() {
+            const cartArray = Object.keys(cart).map(productId => ({
+                product_id: parseInt(productId),
+                quantity: cart[productId].quantity
+            }));
+
+            if (cartArray.length === 0) {
+                alert("購物車是空的！");
+                return;
+            }
+
+            fetch("/checkout", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ product_id: productId, quantity: quantity })
+                body: JSON.stringify({
+                    user_id: 1,
+                    items: cartArray
+                })
+            }).then(response => response.json())
+            .then(result => {
+                alert(result.message);
+                window.location.href = "/checkout-page";
             });
-            const result = await response.json();
-            alert(result.message);
         }
 
         fetchProducts();
