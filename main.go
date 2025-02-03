@@ -48,6 +48,9 @@ func main() {
 	r.GET("/products", func(c *gin.Context) {
 		controller.GetAllProducts(c, database)
 	})
+	r.POST("/add-to-cart", func(c *gin.Context) {
+		controller.AddToCart(c, database)
+	})
 
 	// HTML
 	r.GET("/", func(c *gin.Context) {
