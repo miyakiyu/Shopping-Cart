@@ -2,6 +2,7 @@ package controller
 
 import (
 	"net/http"
+	"shop/model/cart"
 	products "shop/model/product"
 	"shop/model/user"
 
@@ -114,6 +115,36 @@ func GetAllProducts(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, list)
 }
 
-func AddToCart() {
-
+// Add product to shopping cart
+func AddToCart(c *gin.Context, db *gorm.DB) {
+	var request struct {
+		UserID    int `json:"user_id"`
+		ProductID int `json:"product_id"`
+		Quantity  int `json:"quantity"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	db.AutoMigrate(&cart.Cart{})
+	// check if the item is in the cart
+	var Item cart.Cart
+	err := db.Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).First(&Item).Error
+	// Exist
+	if err == nil {
+		Item.Quantity = Item.Quantity + request.Quantity
+		db.Save(&Item)
+	} else if err == gorm.ErrRecordNotFound {
+		// Not exist
+		newItem := cart.Cart{
+			UserID:    request.UserID,
+			ProductID: request.ProductID,
+			Quantity:  request.Quantity,
+		}
+		db.Create(&newItem)
+	} else {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart!"})
 }
