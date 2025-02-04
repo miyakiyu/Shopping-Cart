@@ -156,3 +156,8 @@ func AddToCart(c *gin.Context, db *gorm.DB) {
 
 	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart!"})
 }
+
+// Remove product from shopping cart
+func RemoveFromCart(c *gin.Context, db *gorm.DB) {
+
+}
