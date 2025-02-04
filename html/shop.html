@@ -60,7 +60,6 @@
             text-align: center;
         }
 
-        /* 購物車按鈕 */
         .cart-icon {
             position: fixed;
             bottom: 20px;
@@ -74,7 +73,6 @@
             font-size: 18px;
         }
 
-        /* 購物車視窗 */
         .cart-popup {
             position: fixed;
             bottom: 80px;
@@ -85,24 +83,6 @@
             box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
             border-radius: 8px;
             display: none;
-        }
-
-        .cart-popup h3 {
-            margin-top: 0;
-        }
-
-        .cart-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 5px 0;
-        }
-
-        .cart-item button {
-            width: 25px;
-            height: 25px;
-            font-size: 14px;
-            margin: 0 5px;
         }
 
         .checkout-btn {
@@ -125,10 +105,7 @@
     <h2>商品列表</h2>
     <div class="container" id="product-list"></div>
 
-    <!-- 購物車按鈕 -->
     <button class="cart-icon" onclick="toggleCart()">🛒</button>
-
-    <!-- 購物車視窗 -->
     <div class="cart-popup" id="cart-popup">
         <h3>購物車</h3>
         <div id="cart-items"></div>
@@ -139,11 +116,11 @@
     <script>
         let cart = {};
 
-        // 取得商品列表並渲染到頁面
         async function fetchProducts() {
             const response = await fetch("/products");
             const products = await response.json();
             const container = document.getElementById("product-list");
+            container.innerHTML = "";
 
             products.forEach(product => {
                 const card = document.createElement("div");
@@ -163,7 +140,6 @@
             });
         }
 
-        // 更改商品數量
         function changeQuantity(productId, delta) {
             const input = document.getElementById(`qty-${productId}`);
             let newValue = parseInt(input.value) + delta;
@@ -171,106 +147,50 @@
             input.value = newValue;
         }
 
-        // 加入商品到購物車
         function addToCart(productId, name, price) {
             const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
-
-            if (cart[productId]) {
-                cart[productId].quantity += quantity;
-            } else {
-                cart[productId] = { name, price, quantity };
-            }
-
-            updateCart();
-            alert(`${name} 已加入購物車`);
-        }
-
-        // 更新購物車顯示
-        function updateCart() {
-            const cartItems = document.getElementById("cart-items");
-            const totalPrice = document.getElementById("total-price");
-            cartItems.innerHTML = "";
-            let total = 0;
-
-            Object.keys(cart).forEach(productId => {
-                const item = cart[productId];
-                total += item.price * item.quantity;
-
-                const div = document.createElement("div");
-                div.classList.add("cart-item");
-                div.innerHTML = `
-                    <span>${item.name} ($${item.price})</span>
-                    <div>
-                        <button onclick="updateCartItem('${productId}', -1)">-</button>
-                        <span>${item.quantity}</span>
-                        <button onclick="updateCartItem('${productId}', 1)">+</button>
-                    </div>
-                `;
-                cartItems.appendChild(div);
-            });
-
-            totalPrice.textContent = total;
-        }
-
-        // 更新購物車項目
-        function updateCartItem(productId, delta) {
-            if (cart[productId]) {
-                cart[productId].quantity += delta;
-                if (cart[productId].quantity <= 0) {
-                    delete cart[productId];
-                }
-                updateCart();
-            }
-        }
-
-        // 顯示或隱藏購物車視窗
-        function toggleCart() {
-            const cartPopup = document.getElementById("cart-popup");
-            cartPopup.style.display = cartPopup.style.display === "none" ? "block" : "none";
-        }
-
-        // 從 cookie 取得 user_id
-        function getUserIdFromCookie() {
-            const cookies = document.cookie.split("; ");
-            for (const cookie of cookies) {
-                const [name, value] = cookie.split("=");
-                if (name === "user_id") {
-                    return value;
-                }
-            }
-            return null;
-        }
-
-        // 結帳
-        function checkout() {
             const userId = getUserIdFromCookie();
             if (!userId) {
                 alert("請先登入！");
                 return;
             }
 
-            const cartArray = Object.keys(cart).map(productId => ({
-                product_id: parseInt(productId),
-                quantity: cart[productId].quantity
-            }));
+            const cartData = { user_id: parseInt(userId), product_id: parseInt(productId), quantity };
 
-            if (cartArray.length === 0) {
-                alert("購物車是空的！");
-                return;
-            }
-
-            fetch("/checkout", {
+            fetch("/add-to-cart", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    user_id: parseInt(userId),
-                    items: cartArray
-                })
-            }).then(response => response.json())
-                .then(result => {
-                    alert(result.message);
-                    window.location.href = "/checkout-page";
-                });
+                body: JSON.stringify(cartData)
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.message);
+                updateCart();
+            })
+            .catch(error => alert("加入購物車失敗: " + error.message));
+        }
+
+        function updateCart() {
+            const cartItems = document.getElementById("cart-items");
+            cartItems.innerHTML = "購物車更新中...";
+        }
+
+        function toggleCart() {
+            const cartPopup = document.getElementById("cart-popup");
+            cartPopup.style.display = cartPopup.style.display === "none" ? "block" : "none";
+        }
+
+        function getUserIdFromCookie() {
+            const cookies = document.cookie.split("; ");
+            for (const cookie of cookies) {
+                const [name, value] = cookie.split("=");
+                if (name === "user_id") return value;
+            }
+            return null;
+        }
+
+        function checkout() {
+            alert("結帳功能開發中...");
         }
 
         fetchProducts();
