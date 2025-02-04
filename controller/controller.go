@@ -124,29 +124,35 @@ func AddToCart(c *gin.Context, db *gorm.DB) {
 		ProductID int `json:"product_id"`
 		Quantity  int `json:"quantity"`
 	}
+
 	if err := c.ShouldBindJSON(&request); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
 		return
 	}
-	db.AutoMigrate(&cart.Cart{})
-	// check if the item is in the cart
-	var Item cart.Cart
-	err := db.Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).First(&Item).Error
-	// Exist
+
+	var item cart.Cart
+	err := db.Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).First(&item).Error
+
 	if err == nil {
-		Item.Quantity = Item.Quantity + request.Quantity
-		db.Save(&Item)
+		item.Quantity += request.Quantity
+		if err := db.Save(&item).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update cart"})
+			return
+		}
 	} else if err == gorm.ErrRecordNotFound {
-		// Not exist
 		newItem := cart.Cart{
 			UserID:    request.UserID,
 			ProductID: request.ProductID,
 			Quantity:  request.Quantity,
 		}
-		db.Create(&newItem)
+		if err := db.Create(&newItem).Error; err != nil {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add item"})
+			return
+		}
 	} else {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Database error"})
 		return
 	}
+
 	c.JSON(http.StatusOK, gin.H{"message": "Item added to cart!"})
 }
