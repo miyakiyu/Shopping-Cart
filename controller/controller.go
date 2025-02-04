@@ -5,6 +5,7 @@ import (
 	"shop/model/cart"
 	products "shop/model/product"
 	"shop/model/user"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 	"gorm.io/gorm"
@@ -53,8 +54,9 @@ func UserLogin(c *gin.Context, db *gorm.DB) {
 		return
 	}
 	//Setting cookie
-	c.SetCookie("user", user.Username, 3600, "/", "localhost", false, true)
-	c.SetCookie("role", user.Role, 3600, "/", "localhost", false, true)
+	c.SetCookie("user", user.Username, 3600, "/", "localhost", false, false)
+	c.SetCookie("role", user.Role, 3600, "/", "localhost", false, false)
+	c.SetCookie("user_id", strconv.Itoa(user.ID), 3600, "/", "localhost", false, false)
 
 	c.JSON(http.StatusOK, gin.H{"message": "Login success!"})
 }
