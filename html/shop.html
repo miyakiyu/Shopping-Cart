@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -10,6 +11,7 @@
             background-color: #f4f4f4;
             text-align: center;
         }
+
         .container {
             display: flex;
             flex-wrap: wrap;
@@ -17,6 +19,7 @@
             gap: 20px;
             padding: 20px;
         }
+
         .card {
             background: white;
             padding: 20px;
@@ -25,6 +28,7 @@
             width: 250px;
             text-align: center;
         }
+
         .card button {
             background-color: #007BFF;
             color: white;
@@ -33,24 +37,29 @@
             cursor: pointer;
             width: 100%;
         }
+
         .card button:hover {
             background-color: #0056b3;
         }
+
         .quantity {
             display: flex;
             align-items: center;
             justify-content: center;
             gap: 10px;
         }
+
         .quantity button {
             width: 30px;
             height: 30px;
             font-size: 16px;
         }
+
         .quantity input {
             width: 50px;
             text-align: center;
         }
+
         /* 購物車按鈕 */
         .cart-icon {
             position: fixed;
@@ -64,6 +73,7 @@
             cursor: pointer;
             font-size: 18px;
         }
+
         /* 購物車視窗 */
         .cart-popup {
             position: fixed;
@@ -76,21 +86,25 @@
             border-radius: 8px;
             display: none;
         }
+
         .cart-popup h3 {
             margin-top: 0;
         }
+
         .cart-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
             padding: 5px 0;
         }
+
         .cart-item button {
             width: 25px;
             height: 25px;
             font-size: 14px;
             margin: 0 5px;
         }
+
         .checkout-btn {
             background-color: #28a745;
             color: white;
@@ -100,11 +114,13 @@
             margin-top: 10px;
             cursor: pointer;
         }
+
         .checkout-btn:hover {
             background-color: #218838;
         }
     </style>
 </head>
+
 <body>
     <h2>商品列表</h2>
     <div class="container" id="product-list"></div>
@@ -123,11 +139,12 @@
     <script>
         let cart = {};
 
+        // 取得商品列表並渲染到頁面
         async function fetchProducts() {
             const response = await fetch("/products");
             const products = await response.json();
             const container = document.getElementById("product-list");
-            
+
             products.forEach(product => {
                 const card = document.createElement("div");
                 card.classList.add("card");
@@ -146,6 +163,7 @@
             });
         }
 
+        // 更改商品數量
         function changeQuantity(productId, delta) {
             const input = document.getElementById(`qty-${productId}`);
             let newValue = parseInt(input.value) + delta;
@@ -153,9 +171,10 @@
             input.value = newValue;
         }
 
+        // 加入商品到購物車
         function addToCart(productId, name, price) {
             const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
-            
+
             if (cart[productId]) {
                 cart[productId].quantity += quantity;
             } else {
@@ -166,6 +185,7 @@
             alert(`${name} 已加入購物車`);
         }
 
+        // 更新購物車顯示
         function updateCart() {
             const cartItems = document.getElementById("cart-items");
             const totalPrice = document.getElementById("total-price");
@@ -192,6 +212,7 @@
             totalPrice.textContent = total;
         }
 
+        // 更新購物車項目
         function updateCartItem(productId, delta) {
             if (cart[productId]) {
                 cart[productId].quantity += delta;
@@ -202,12 +223,32 @@
             }
         }
 
+        // 顯示或隱藏購物車視窗
         function toggleCart() {
             const cartPopup = document.getElementById("cart-popup");
             cartPopup.style.display = cartPopup.style.display === "none" ? "block" : "none";
         }
 
+        // 從 cookie 取得 user_id
+        function getUserIdFromCookie() {
+            const cookies = document.cookie.split("; ");
+            for (const cookie of cookies) {
+                const [name, value] = cookie.split("=");
+                if (name === "user_id") {
+                    return value;
+                }
+            }
+            return null;
+        }
+
+        // 結帳
         function checkout() {
+            const userId = getUserIdFromCookie();
+            if (!userId) {
+                alert("請先登入！");
+                return;
+            }
+
             const cartArray = Object.keys(cart).map(productId => ({
                 product_id: parseInt(productId),
                 quantity: cart[productId].quantity
@@ -222,14 +263,14 @@
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    user_id: 1,
+                    user_id: parseInt(userId),
                     items: cartArray
                 })
             }).then(response => response.json())
-            .then(result => {
-                alert(result.message);
-                window.location.href = "/checkout-page";
-            });
+                .then(result => {
+                    alert(result.message);
+                    window.location.href = "/checkout-page";
+                });
         }
 
         fetchProducts();
