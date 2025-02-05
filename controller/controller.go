@@ -134,7 +134,7 @@ func AddToCart(c *gin.Context, db *gorm.DB) {
 	err := db.Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).First(&item).Error
 
 	if err == nil {
-		item.Quantity += request.Quantity
+		item.Quantity = request.Quantity + item.Quantity
 		if err := db.Save(&item).Error; err != nil {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update cart"})
 			return
@@ -159,5 +159,34 @@ func AddToCart(c *gin.Context, db *gorm.DB) {
 
 // Remove product from shopping cart
 func RemoveFromCart(c *gin.Context, db *gorm.DB) {
+	var request struct {
+		UserID    int `json:"user_id"`
+		ProductID int `json:"product_id"`
+		Quantity  int `json:"quantity"`
+	}
+	if err := c.ShouldBindJSON(&request); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format", "details": err.Error()})
+		return
+	}
 
+	// Find item in cart
+	var item cart.Cart
+	if err := db.Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).First(&item).Error; err != nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Item not found"})
+		return
+	}
+
+	// If Quantity less than 0 , delete item
+	if item.Quantity-request.Quantity <= 0 {
+		db.Unscoped().Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).Delete(&cart.Cart{})
+		c.JSON(http.StatusOK, gin.H{"message": "Item removed from cart"})
+		return
+	}
+
+	// else reduce quantity
+	if err := db.Model(&item).Where("user_id = ? AND product_id = ?", request.UserID, request.ProductID).
+		Update("quantity", gorm.Expr("quantity - ?", request.Quantity)).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update quantity"})
+		return
+	}
 }
