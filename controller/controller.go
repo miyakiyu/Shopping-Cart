@@ -117,6 +117,20 @@ func GetAllProducts(c *gin.Context, db *gorm.DB) {
 	c.JSON(http.StatusOK, list)
 }
 
+func GetCartItem(c *gin.Context, db *gorm.DB) {
+	userID, exist := c.Get("user_id")
+	if !exist {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
+		return
+	}
+	var list []cart.Cart
+	if err := db.Where("user_id = ?", userID).Find(&list).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+	c.JSON(http.StatusOK, list)
+}
+
 // Add product to shopping cart
 func AddToCart(c *gin.Context, db *gorm.DB) {
 	var request struct {
