@@ -51,6 +51,9 @@ func main() {
 	r.POST("/add-to-cart", func(c *gin.Context) {
 		controller.AddToCart(c, database)
 	})
+	r.POST("/remove", func(c *gin.Context) {
+		controller.RemoveFromCart(c, database)
+	})
 
 	// HTML
 	r.GET("/", func(c *gin.Context) {
