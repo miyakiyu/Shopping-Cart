@@ -170,14 +170,8 @@
             .catch(error => alert("加入購物車失敗: " + error.message));
         }
 
-        function updateCart() {
-            const cartItems = document.getElementById("cart-items");
-            cartItems.innerHTML = "購物車更新中...";
-        }
-
         function toggleCart() {
-            const cartPopup = document.getElementById("cart-popup");
-            cartPopup.style.display = cartPopup.style.display === "none" ? "block" : "none";
+            window.location.href = "/cart";
         }
 
         function getUserIdFromCookie() {
