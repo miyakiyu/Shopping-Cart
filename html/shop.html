@@ -163,10 +163,7 @@
                 body: JSON.stringify(cartData)
             })
             .then(response => response.json())
-            .then(result => {
-                alert(result.message);
-                updateCart();
-            })
+            .then(result => {alert("加入成功！");})
             .catch(error => alert("加入購物車失敗: " + error.message));
         }
 
@@ -181,10 +178,6 @@
                 if (name === "user_id") return value;
             }
             return null;
-        }
-
-        function checkout() {
-            alert("結帳功能開發中...");
         }
 
         fetchProducts();
