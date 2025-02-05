@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="zh">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>購物車</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 20px auto;
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .cart-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .cart-item button {
+            background-color: red;
+            color: white;
+            border: none;
+            padding: 5px;
+            cursor: pointer;
+        }
+
+        .cart-item button:hover {
+            background-color: darkred;
+        }
+
+        .checkout-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 10px;
+            width: 100%;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+
+        .checkout-btn:hover {
+            background-color: #218838;
+        }
+    </style>
+</head>
+
+<body>
+    <h2>購物車</h2>
+    <div class="container">
+        <div id="cart-list">載入中...</div>
+        <p><strong>總金額: $<span id="total-price">0</span></strong></p>
+        <button class="checkout-btn" onclick="checkout()">結帳</button>
+    </div>
+
+    <script>
+        async function fetchCartItems() {
+            const response = await fetch("/shopcart"); // 假設後端 API 為 /api/cart-items
+            if (!response.ok) {
+                document.getElementById("cart-list").innerHTML = "購物車載入失敗，請重新整理";
+                return;
+            }
+
+            const cartItems = await response.json();
+            const cartList = document.getElementById("cart-list");
+            cartList.innerHTML = ""; // 清空列表
+            let totalPrice = 0;
+
+            if (cartItems.length === 0) {
+                cartList.innerHTML = "<p>購物車是空的</p>";
+                return;
+            }
+
+            cartItems.forEach(item => {
+                totalPrice += item.price * item.quantity;
+
+                const div = document.createElement("div");
+                div.classList.add("cart-item");
+                div.innerHTML = `
+                    <span>${item.name} (${item.quantity}x)</span>
+                    <span>$${item.price * item.quantity}</span>
+                    <button onclick="removeFromCart(${item.product_id})">❌</button>
+                `;
+                cartList.appendChild(div);
+            });
+
+            document.getElementById("total-price").innerText = totalPrice;
+        }
+
+        function removeFromCart(productId) {
+            fetch("/remove-cart", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ product_id: productId })
+            })
+            .then(response => response.json())
+            .then(result => {
+                alert(result.message);
+                fetchCartItems(); // 重新載入購物車
+            })
+            .catch(error => alert("移除失敗: " + error.message));
+        }
+
+        function checkout() {
+            alert("結帳功能開發中...");
+        }
+
+        fetchCartItems(); // 載入購物車
+    </script>
+</body>
+
+</html>
