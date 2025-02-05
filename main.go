@@ -54,6 +54,9 @@ func main() {
 	r.POST("/remove-cart", func(c *gin.Context) {
 		controller.RemoveFromCart(c, database)
 	})
+	r.GET("/shopcart", func(c *gin.Context) {
+		controller.GetCartItem(c, database)
+	})
 
 	// HTML
 	r.GET("/", func(c *gin.Context) {
