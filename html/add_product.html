@@ -68,20 +68,19 @@ document.getElementById("add-product-form").addEventListener("submit", async fun
 
         let data;
         try {
-            data = await response.json(); // 確保 JSON 解析安全
+            data = await response.json();
         } catch (error) {
-            console.error("回應不是 JSON:", error);
-            throw new Error("無法解析伺服器回應");
+            throw new Error("Cannot parse response JSON");
         }
 
         if (!response.ok) {
-            throw new Error(data.error || "請求失敗");
+            throw new Error(data.error || "Failed to add product");
         }
 
-        alert(data.message || "商品新增成功！");
-        window.location.href = "/"; // 成功後跳轉
+        alert(data.message || "Item added successfully!");
+        window.location.href = "/"; 
     } catch (error) {
-        alert(`錯誤: ${error.message}`);
+        alert(`Error: ${error.message}`);
     }
 });
     </script>
