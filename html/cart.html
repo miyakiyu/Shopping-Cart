@@ -24,8 +24,14 @@
         .cart-item {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             padding: 10px;
             border-bottom: 1px solid #ddd;
+        }
+
+        .cart-item input {
+            width: 50px;
+            text-align: center;
         }
 
         .cart-item button {
@@ -66,59 +72,85 @@
 
     <script>
         async function fetchCartItems() {
-    try {
-        const response = await fetch("/shopcart");  // 確保 API 正確
-        const cartItems = await response.json();
+            try {
+                const response = await fetch("/shopcart");  
+                const cartItems = await response.json();
+                const cartList = document.getElementById("cart-list");
+                cartList.innerHTML = "";
+                let totalPrice = 0;
 
-        console.log("✅ 後端回應:", cartItems); // 確認後端回傳資料
+                if (cartItems.length === 0) {
+                    cartList.innerHTML = "<p>購物車是空的</p>";
+                    return;
+                }
 
-        const cartList = document.getElementById("cart-list");
-        cartList.innerHTML = "";
-        let totalPrice = 0;
+                cartItems.forEach(item => {
+                    if (!item.Product) {  
+                        return;
+                    }
 
-        if (cartItems.length === 0) {
-            cartList.innerHTML = "<p>購物車是空的</p>";
-            return;
+                    totalPrice += item.Product.price * item.quantity;
+
+                    const div = document.createElement("div");
+                    div.classList.add("cart-item");
+                    div.innerHTML = `
+                        <span>${item.Product.name} (${item.quantity}x)</span>
+                        <input type="number" id="quantity-${item.Product.id}" value="1" min="1" max="${item.quantity}">
+                        <span>$${item.Product.price * item.quantity}</span>
+                        <button onclick="removeFromCart(${item.Product.id})">❌</button>
+                    `;
+                    cartList.appendChild(div);
+                });
+                document.getElementById("total-price").innerText = totalPrice;
+            } catch (error) {
+                document.getElementById("cart-list").innerHTML = "Loading failed: " + error.message;
+            }
         }
 
-        cartItems.forEach(item => {
-            if (!item.Product) {  // 確保 Product 存在
-                console.error("❌ 錯誤: 缺少 Product 資料", item);
+        function removeFromCart(productId) {
+            const userId = getCookie("user_id"); 
+            const quantity = parseInt(document.getElementById(`quantity-${productId}`).value, 10);
+
+            if (!userId) {
+                alert("Not Login");
+                return;
+            }
+            if (isNaN(quantity) || quantity <= 0) {
+                alert("Invalid Quantity");
                 return;
             }
 
-            totalPrice += item.Product.price * item.quantity;
+            const requestData = {
+                user_id: parseInt(userId, 10),
+                product_id: parseInt(productId, 10),
+                quantity: quantity
+            };
 
-            const div = document.createElement("div");
-            div.classList.add("cart-item");
-            div.innerHTML = `
-                <span>${item.Product.name} (${item.quantity}x)</span>
-                <span>$${item.Product.price * item.quantity}</span>
-                <button onclick="removeFromCart(${item.product_id})">❌</button>
-            `;
-            cartList.appendChild(div);
-        });
-
-        document.getElementById("total-price").innerText = totalPrice;
-    } catch (error) {
-        console.error("❌ 購物車載入失敗:", error);
-        document.getElementById("cart-list").innerHTML = "購物車載入失敗，請重新整理";
-    }
-}
-
-
-        function removeFromCart(productId) {
-            fetch("/remove-cart", {
+            fetch("/remove", {  
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ product_id: productId })
+                body: JSON.stringify(requestData)
             })
-            .then(response => response.json())
+            .then(response => response.text())
+            .then(text => text ? JSON.parse(text) : {})
             .then(result => {
-                alert(result.message);
-                fetchCartItems(); 
+                if (result.error) {
+                    alert("Failed: " + result.error);
+                } else {
+                    alert(result.message || "Removed!");
+                    fetchCartItems();
+                }
             })
-            .catch(error => alert("移除失敗: " + error.message));
+            .catch(error => alert("Failed: " + error.message));
+        }
+
+        function getCookie(name) {
+            const cookies = document.cookie.split("; ");
+            for (let cookie of cookies) {
+                const [key, value] = cookie.split("=");
+                if (key === name) return value;
+            }
+            return null;
         }
 
         function checkout() {
@@ -128,5 +160,4 @@
         fetchCartItems(); 
     </script>
 </body>
-
 </html>
