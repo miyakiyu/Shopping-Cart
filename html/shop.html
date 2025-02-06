@@ -151,7 +151,7 @@
             const quantity = parseInt(document.getElementById(`qty-${productId}`).value);
             const userId = getUserIdFromCookie();
             if (!userId) {
-                alert("請先登入！");
+                alert("Please Login first!");
                 return;
             }
 
@@ -163,8 +163,8 @@
                 body: JSON.stringify(cartData)
             })
             .then(response => response.json())
-            .then(result => {alert("加入成功！");})
-            .catch(error => alert("加入購物車失敗: " + error.message));
+            .then(result => {alert("Add sucessful!");})
+            .catch(error => alert("Add failed: " + error.message));
         }
 
         function toggleCart() {
