@@ -118,13 +118,19 @@ func GetAllProducts(c *gin.Context, db *gorm.DB) {
 }
 
 func GetCartItem(c *gin.Context, db *gorm.DB) {
-	userID, exist := c.Get("user_id")
-	if !exist {
+	userID, err := c.Cookie("user_id")
+	if err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not found"})
 		return
 	}
+	// Trans string(cookie) to int
+	userIDInt, err := strconv.Atoi(userID)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "User_id is not int"})
+		return
+	}
 	var list []cart.Cart
-	if err := db.Where("user_id = ?", userID).Find(&list).Error; err != nil {
+	if err := db.Preload("Product").Where("user_id = ?", userIDInt).Find(&list).Error; err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
