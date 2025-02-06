@@ -84,11 +84,10 @@
 
         async function logout() {
             await fetch("/logout", { method: "POST" });
-            window.location.href = "/login"; // 登出後轉跳到登入頁面
+            window.location.href = "/login";
         }
 
         checkLogin();
     </script>
-
 </body>
 </html>
