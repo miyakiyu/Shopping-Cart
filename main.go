@@ -57,6 +57,9 @@ func main() {
 	r.GET("/shopcart", func(c *gin.Context) {
 		controller.GetCartItem(c, database)
 	})
+	r.POST("/checkout-cart", func(c *gin.Context) {
+		controller.Checkout(c, database)
+	})
 
 	// HTML
 	r.GET("/", func(c *gin.Context) {
@@ -82,6 +85,9 @@ func main() {
 	})
 	r.GET("/cart", func(c *gin.Context) {
 		c.HTML(http.StatusOK, "cart.html", nil)
+	})
+	r.GET("/checkout", func(c *gin.Context) {
+		c.HTML(http.StatusOK, "checkout.html", nil)
 	})
 
 	r.Run()
