@@ -210,3 +210,52 @@ func RemoveFromCart(c *gin.Context, db *gorm.DB) {
 		return
 	}
 }
+
+// Checkout shopping cart
+func Checkout(c *gin.Context, db *gorm.DB) {
+	type request struct {
+		UserID int `json:"user_id"`
+	}
+	var req request
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+		return
+	}
+
+	// Checking item
+	var list []cart.Cart
+	if err := db.Preload("Product").Where("user_id = ?", req.UserID).Find(&list).Error; err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to get cart items"})
+		return
+	}
+
+	// Delete stock
+	// Start transaction
+	deal := db.Begin()
+	for _, item := range list {
+		// If stock isn't enough, rollback
+		if item.Quantity > item.Product.Stock {
+			deal.Rollback()
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Stock not enough"})
+			return
+		}
+		// If stock is enough, update stock
+		if err := deal.Model(&products.Product{}).
+			Where("id = ?", item.ProductID).
+			Update("stock", gorm.Expr("stock - ?", item.Quantity)).Error; err != nil {
+			deal.Rollback()
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to update stock"})
+			return
+		}
+	}
+
+	// Delete cart item
+	if err := deal.Where("user_id = ?", req.UserID).Delete(&cart.Cart{}).Error; err != nil {
+		deal.Rollback()
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to clan cart"})
+		return
+	}
+
+	deal.Commit()
+	c.JSON(http.StatusOK, gin.H{"message": "Checkout success!"})
+}
