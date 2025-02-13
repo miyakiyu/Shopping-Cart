@@ -8,6 +8,7 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -16,17 +17,24 @@ func UserRegister(c *gin.Context, db *gorm.DB) {
 	var input struct {
 		Username string `json:"user" binding:"required"`
 		Password string `json:"password" binding:"required"`
-		Role     string `json:"role" bindng:"required,oneof = buyer seller"`
+		Role     string `json:"role" validate:"oneof=buyer seller"`
 	}
 	// Check input
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
+	// Hashing
+	hashpass, err := bcrypt.GenerateFromPassword([]byte(input.Password), bcrypt.DefaultCost)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
 	// Store user to database
 	user := user.User{
 		Username: input.Username,
-		Password: input.Password,
+		Password: string(hashpass),
 		Role:     input.Role,
 	}
 	if err := db.Create(&user).Error; err != nil {
@@ -49,10 +57,16 @@ func UserLogin(c *gin.Context, db *gorm.DB) {
 	}
 	// Find user in database
 	var user user.User
-	if err := db.Where("username = ? AND password = ?", input.Username, input.Password).First(&user).Error; err != nil {
+	if err := db.Where("username = ?", input.Username).First(&user).Error; err != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": err.Error()})
 		return
 	}
+	// checking hash
+	if err := bcrypt.CompareHashAndPassword([]byte(user.Password), []byte(input.Password)); err != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "Invalid password"})
+		return
+	}
+
 	//Setting cookie
 	c.SetCookie("user", user.Username, 3600, "/", "localhost", false, false)
 	c.SetCookie("role", user.Role, 3600, "/", "localhost", false, false)
