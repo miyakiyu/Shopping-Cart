@@ -17,3 +17,5 @@ go run main.go
 For more detailed visited:
 [My article](https://miyakiyu.github.io/2025/01/24/Shopping-cart-Go/)
 
+## Update
+- 2025/02/13: Add Hash for protect passwords.
